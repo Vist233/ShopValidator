@@ -137,3 +137,34 @@ function mockClient(responses, calls = []) {
 }
 
 console.log("StepFun client: 5 retry and validation scenarios passed");
+
+{
+  let requestUrl = "";
+  let requestInit;
+  const client = new StepFunClient(
+    {
+      AI_PROVIDER: "openrouter",
+      OPENROUTER_API_KEY: "router-test-key",
+      OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+      OPENROUTER_MODEL: "openrouter/free",
+      OPENROUTER_SITE_URL: "https://shopvalidator.zhangyvjing.com",
+      OPENROUTER_APP_NAME: "ShopValidator"
+    },
+    {
+      fetch: async (input, init) => {
+        requestUrl = String(input);
+        requestInit = init;
+        return Response.json({ choices: [{ finish_reason: "stop", message: { content: '{"ok":true}' } }] });
+      }
+    }
+  );
+  assert.equal(client.provider, "openrouter");
+  assert.equal(client.textModel, "openrouter/free");
+  assert.deepEqual(await client.chatJson([{ role: "user", content: "返回 JSON" }]), { ok: true });
+  assert.equal(requestUrl, "https://openrouter.ai/api/v1/chat/completions");
+  assert.equal(requestInit.headers["HTTP-Referer"], "https://shopvalidator.zhangyvjing.com");
+  assert.equal(requestInit.headers["X-Title"], "ShopValidator");
+  assert.equal(JSON.parse(requestInit.body).model, "openrouter/free");
+}
+
+console.log("OpenRouter free client: endpoint, headers, and JSON mode passed");
