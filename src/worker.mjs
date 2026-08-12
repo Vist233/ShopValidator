@@ -1328,10 +1328,10 @@ async function processInterviewTurn(record, transcript, llm, source = "voice") {
   ], {
     temperature: 0.1,
     maxTokens: 700,
-    // A live interview should never wait for the text model's full 25-second
-    // default. If the fast path misses this budget, the deterministic question
-    // policy continues immediately and the review screen catches omissions.
-    timeoutMs: 7000
+    // OpenRouter free routes can spend a few seconds selecting an available
+    // provider before returning structured JSON. Keep a hard upper bound, but
+    // do not turn normal free-route latency into a deterministic-only turn.
+    timeoutMs: 15000
   });
   const extracted = canonicalInterviewFacts(response?.facts, { stage: record.stage, source, transcript });
   const facts = (extracted.length ? extracted : deterministicAnswerFact(currentField, transcript, record.stage, source)).slice(0, 8);
