@@ -1,5 +1,7 @@
-const DEFAULT_BASE_URL = "https://api.stepfun.com/step_plan/v1";
-const DEFAULT_TEXT_MODEL = "step-3.7-flash";
+const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_OPENROUTER_MODEL = "openrouter/free";
+const DEFAULT_STEPFUN_BASE_URL = "https://api.stepfun.com/step_plan/v1";
+const DEFAULT_STEPFUN_MODEL = "step-3.7-flash";
 const DEFAULT_TTS_MODEL = "stepaudio-2.5-tts";
 const JSON_RETRY_PROMPT = [
   "上一次输出为空、被截断、不是有效 JSON，或字段结构不符合要求。",
@@ -63,11 +65,24 @@ async function validateJsonResult(result, options) {
 
 export class StepFunClient {
   constructor(env = {}, options = {}) {
-    const rawKeys = env.STEPFUN_API_KEYS || env.STEPFUN_API_KEY || env.step_API_KEY || "";
+    const requestedProvider = String(env.AI_PROVIDER || env.TEXT_LLM_PROVIDER || "").trim().toLowerCase();
+    const openRouterKeys = env.OPENROUTER_API_KEYS || env.OPENROUTER_API_KEY || "";
+    const stepFunKeys = env.STEPFUN_API_KEYS || env.STEPFUN_API_KEY || env.step_API_KEY || "";
+    // Production sets AI_PROVIDER=openrouter. The legacy StepFun path remains
+    // available for local tests and older deployments, but is never selected
+    // when OpenRouter is explicitly required.
+    this.provider = requestedProvider || (String(openRouterKeys).trim() ? "openrouter" : "stepfun");
+    const rawKeys = this.provider === "openrouter" ? openRouterKeys : stepFunKeys;
     this.apiKeys = String(rawKeys).split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean);
-    this.baseUrl = String(env.STEPFUN_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
-    this.textModel = env.STEPFUN_MODEL || DEFAULT_TEXT_MODEL;
+    this.baseUrl = this.provider === "openrouter"
+      ? String(env.OPENROUTER_BASE_URL || DEFAULT_OPENROUTER_BASE_URL).replace(/\/+$/, "")
+      : String(env.STEPFUN_BASE_URL || DEFAULT_STEPFUN_BASE_URL).replace(/\/+$/, "");
+    this.textModel = this.provider === "openrouter"
+      ? env.OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL
+      : env.STEPFUN_MODEL || DEFAULT_STEPFUN_MODEL;
     this.ttsModel = env.STEPFUN_TTS_MODEL || DEFAULT_TTS_MODEL;
+    this.siteUrl = String(env.OPENROUTER_SITE_URL || env.APP_ORIGIN || "").trim();
+    this.appName = String(env.OPENROUTER_APP_NAME || "ShopValidator").trim();
     // Cloudflare's native fetch is an invocation-sensitive host function.
     // Keeping a bare reference and later calling `this.fetch(...)` changes its
     // receiver and throws "Illegal invocation"; a wrapper preserves a direct
@@ -89,7 +104,7 @@ export class StepFunClient {
   }
 
   async chatJson(messages, options = {}) {
-    if (!this.configured) throw new Error("STEPFUN_API_KEY 未配置");
+    if (!this.configured) throw new Error(`${this.provider === "openrouter" ? "OPENROUTER_API_KEY" : "STEPFUN_API_KEY"} 未配置`);
     const baseMaxTokens = options.maxTokens || 1800;
     let lastJsonError = null;
 
@@ -99,13 +114,18 @@ export class StepFunClient {
         const requestMessages = attempt === 0
           ? messages
           : [...messages, { role: "user", content: JSON_RETRY_PROMPT }];
+        const headers = {
+          "Authorization": `Bearer ${this.nextKey()}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        };
+        if (this.provider === "openrouter") {
+          if (this.siteUrl) headers["HTTP-Referer"] = this.siteUrl;
+          if (this.appName) headers["X-Title"] = this.appName;
+        }
         const response = await this.fetch(`${this.baseUrl}/chat/completions`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${this.nextKey()}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
+          headers,
           body: JSON.stringify({
             model: this.textModel,
             messages: requestMessages,
@@ -117,14 +137,14 @@ export class StepFunClient {
         });
         if (!response.ok) {
           const detail = (await response.text()).slice(0, 400);
-          throw new Error(`StepFun 文本请求失败 ${response.status}: ${detail}`);
+          throw new Error(`${this.provider} 文本请求失败 ${response.status}: ${detail}`);
         }
 
         const payload = await response.json();
         const choice = payload?.choices?.[0] || {};
         const message = choice.message || {};
         try {
-          if (isTruncated(choice)) throw new Error("StepFun JSON 因 token 上限被截断");
+          if (isTruncated(choice)) throw new Error(`${this.provider} JSON 因 token 上限被截断`);
           // reasoning_content 可能包含未完成的思考，不能作为最终结构化结果。
           const result = extractJson(message.content);
           await validateJsonResult(result, options);
@@ -138,10 +158,11 @@ export class StepFunClient {
       }
     }
 
-    throw new Error(`StepFun 连续两次未返回可用 JSON: ${lastJsonError?.message || "未知结构错误"}`);
+    throw new Error(`${this.provider} 连续两次未返回可用 JSON: ${lastJsonError?.message || "未知结构错误"}`);
   }
 
   async tts(input, options = {}) {
+    if (this.provider === "openrouter") throw new Error("OpenRouter 文本端点不提供 TTS，请使用独立语音服务");
     if (!this.configured) throw new Error("STEPFUN_API_KEY 未配置");
     const text = String(input || "").trim();
     if (!text || text.length > 500) throw new Error("TTS 文本长度必须为 1—500 字");
@@ -175,7 +196,12 @@ export class StepFunClient {
 }
 
 export const stepFunDefaults = {
-  baseUrl: DEFAULT_BASE_URL,
-  textModel: DEFAULT_TEXT_MODEL,
+  baseUrl: DEFAULT_STEPFUN_BASE_URL,
+  textModel: DEFAULT_STEPFUN_MODEL,
   ttsModel: DEFAULT_TTS_MODEL
+};
+
+export const openRouterDefaults = {
+  baseUrl: DEFAULT_OPENROUTER_BASE_URL,
+  textModel: DEFAULT_OPENROUTER_MODEL
 };

@@ -50,8 +50,11 @@ database_id = "2d24b2fd-4119-4932-9458-c2607a09c7c4"
 [vars]
 APP_ORIGIN = "https://shopvalidator.zhangyvjing.com"
 DEMO_ORIGIN = "https://demo.shopvalidator.zhangyvjing.com"
-STEPFUN_BASE_URL = "https://api.stepfun.com/step_plan/v1"
-STEPFUN_MODEL = "step-3.7-flash"
+AI_PROVIDER = "openrouter"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL = "openrouter/free"
+OPENROUTER_SITE_URL = "https://shopvalidator.zhangyvjing.com"
+OPENROUTER_APP_NAME = "ShopValidator"
 DASHSCOPE_ASR_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
 DASHSCOPE_ASR_MODEL = "fun-asr-flash-2026-06-15"
 DASHSCOPE_TTS_URL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
@@ -60,9 +63,11 @@ DASHSCOPE_TTS_VOICE = "Serena"
 DASHSCOPE_TTS_INSTRUCTIONS = "温柔、自然、有专业感的年轻女声；普通话清晰；中等偏慢语速；像一位可信赖的产品助手。"
 
 # Secrets are configured with:
-#   npx wrangler secret put STEPFUN_API_KEY
+#   npx wrangler secret put OPENROUTER_API_KEY
 # or, for a server-only comma/newline-separated key pool:
-#   npx wrangler secret put STEPFUN_API_KEYS
+#   npx wrangler secret put OPENROUTER_API_KEYS
+# STEPFUN_API_KEY is retained only for the legacy WebSocket ASR relay and
+# should not be used by the text Agent when AI_PROVIDER=openrouter.
 #   npx wrangler secret put TENCENT_MAP_KEY
 #   npx wrangler secret put TENCENT_MAP_KEY_SECONDARY
 #   npx wrangler secret put DASHSCOPE_API_KEY
