@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="店判是一个餐饮经营决策项目。通过虚构案例了解它怎样整理事实、设计小规模验证。">
+  <title>店判 ShopValidator · 项目展示</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="frame masthead">
+    <a class="brand" href="/">店判 <span>SHOPVALIDATOR</span></a>
+    <a href="https://github.com/Vist233/ShopValidator">GitHub 源码 ↗</a>
+  </header>
+  <main class="frame">
+    <section class="intro" aria-labelledby="intro-title">
+      <p class="label">餐饮经营决策 / 项目展示</p>
+      <h1 id="intro-title">先判断，<br>再投钱。</h1>
+      <p class="lead">开一家店之前，先把事实和假设分清。店判把经营问题拆成可以核对的账、还未知的条件，以及一个有停止线的小实验。</p>
+      <a class="action" href="#example">看一个示例 ↓</a>
+    </section>
+
+    <section class="case" id="example" aria-labelledby="example-title">
+      <header class="case-header">
+        <p class="label">案例 01 / 虚构示例</p>
+        <h2 id="example-title">社区简餐店，签约前该验证什么？</h2>
+        <p>这份固定样例展示判断流程。数字为虚构，供阅读参考。</p>
+      </header>
+      <ol class="steps">
+        <li>
+          <h3>确认场景</h3>
+          <p>计划在社区入口做午餐简餐，主要客群是周边上班族和住户。</p>
+        </li>
+        <li>
+          <h3>核对事实</h3>
+          <dl>
+            <div><dt>月固定支出估算</dt><dd>¥12,000</dd></div>
+            <div><dt>每单贡献估算</dt><dd>¥12</dd></div>
+            <div><dt>按月营业 25 天测算</dt><dd>约 40 单/天保本</dd></div>
+          </dl>
+          <p>未知项包括午餐实际客流、复购和淡季需求。</p>
+        </li>
+        <li>
+          <h3>做一轮小测试</h3>
+          <p>签约前做 5 天预售。每天记录付费订单和每单贡献，并区分熟人单和自然订单。测试预算上限 ¥800。</p>
+        </li>
+        <li>
+          <h3>到线就停</h3>
+          <p>第 4、5 天的自然付费订单均达到 40 单，且每单贡献达到 ¥12，再进入选址和租约复核。未达标时先停止签约。</p>
+        </li>
+      </ol>
+    </section>
+    <aside class="status">
+      <strong>当前为静态展示。</strong> 在线问诊、分析、排行榜和案卷服务已结束。历史实现可以在 GitHub 查看。
+    </aside>
+  </main>
+  <footer class="frame footer">店判 / SHOPVALIDATOR</footer>
+</body>
+</html>
